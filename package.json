@@ -11,16 +11,32 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.sayHello"
+        "onCommand:extension.open",
+        "onCommand:extension.update"
     ],
     "main": "./out/src/extension",
     "contributes": {
         "commands": [
             {
-                "command": "extension.sayHello",
-                "title": "Hello World"
+                "command": "extension.open",
+                "title": "Webtask: Open"
+            },
+            {
+                "command": "extension.update",
+                "title": "Webtask: Update"
             }
-        ]
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Webtask configuration",
+            "properties": {
+                "webtask.configPath": {
+                    "type": "string",
+                    "default": "$HOME/.webtask",
+                    "description": "Path to a webtask config file."
+                }
+            }
+        }
     },
     "scripts": {
         "vscode:prepublish": "tsc -p ./",
@@ -34,5 +50,10 @@
         "mocha": "^2.3.3",
         "@types/node": "^6.0.40",
         "@types/mocha": "^2.2.32"
+    },
+    "dependencies": {
+        "request": "^2.81.0",
+        "request-promise": "^4.2.1",
+        "user-home": "^2.0.0"
     }
 }
