@@ -1,59 +1,65 @@
 {
-    "name": "webtaskio-vsc-extension",
-    "displayName": "Webtask.io connect",
-    "description": "Connect to webtask.io from VSCode",
-    "version": "0.0.1",
-    "publisher": "dusan",
-    "engines": {
-        "vscode": "^1.15.0"
-    },
-    "categories": [
-        "Other"
+  "name": "webtaskio-vsc-extension",
+  "displayName": "Webtask.io connect",
+  "description": "Connect to webtask.io from VSCode",
+  "version": "0.0.1",
+  "publisher": "dusan",
+  "engines": {
+    "vscode": "^1.15.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:webtask.init",
+    "onCommand:webtask.open",
+    "onCommand:webtask.update"
+  ],
+  "main": "./out/src/extension",
+  "contributes": {
+    "commands": [
+      {
+        "command": "webtask.init",
+        "title": "Webtask: Init"
+      },
+      {
+        "command": "webtask.open",
+        "title": "Webtask: Open"
+      },
+      {
+        "command": "webtask.update",
+        "title": "Webtask: Update"
+      }
     ],
-    "activationEvents": [
-        "onCommand:extension.open",
-        "onCommand:extension.update"
-    ],
-    "main": "./out/src/extension",
-    "contributes": {
-        "commands": [
-            {
-                "command": "extension.open",
-                "title": "Webtask: Open"
-            },
-            {
-                "command": "extension.update",
-                "title": "Webtask: Update"
-            }
-        ],
-        "configuration": {
-            "type": "object",
-            "title": "Webtask configuration",
-            "properties": {
-                "webtask.configPath": {
-                    "type": "string",
-                    "default": "$HOME/.webtask",
-                    "description": "Path to a webtask config file."
-                }
-            }
+    "configuration": {
+      "type": "object",
+      "title": "Webtask configuration",
+      "properties": {
+        "webtask.configPath": {
+          "type": "string",
+          "default": "$HOME/.webtask",
+          "description": "Path to a webtask config file."
         }
-    },
-    "scripts": {
-        "vscode:prepublish": "tsc -p ./",
-        "compile": "tsc -watch -p ./",
-        "postinstall": "node ./node_modules/vscode/bin/install",
-        "test": "node ./node_modules/vscode/bin/test"
-    },
-    "devDependencies": {
-        "typescript": "^2.0.3",
-        "vscode": "^1.0.0",
-        "mocha": "^2.3.3",
-        "@types/node": "^6.0.40",
-        "@types/mocha": "^2.2.32"
-    },
-    "dependencies": {
-        "request": "^2.81.0",
-        "request-promise": "^4.2.1",
-        "user-home": "^2.0.0"
+      }
     }
+  },
+  "scripts": {
+    "vscode:prepublish": "tsc -p ./",
+    "compile": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "node ./node_modules/vscode/bin/test"
+  },
+  "devDependencies": {
+    "typescript": "^2.0.3",
+    "vscode": "^1.0.0",
+    "mocha": "^2.3.3",
+    "@types/node": "^6.0.40",
+    "@types/mocha": "^2.2.32"
+  },
+  "dependencies": {
+    "jwt-decode": "^2.2.0",
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1",
+    "user-home": "^2.0.0"
+  }
 }
