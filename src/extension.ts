@@ -1,404 +1,148 @@
 'use strict';
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as fs from 'fs';
 
 import * as vscode from 'vscode';
-import { Uri } from 'vscode';
-
-import * as request from 'request';
+import { Uri, commands } from 'vscode';
 import * as rp from 'request-promise';
 import * as userHome from 'user-home';
-import * as jwtDecode from 'jwt-decode';
+import * as open from 'open';
+import * as macOpen from 'mac-open';
+
+import * as http from './http';
+import * as ui from './ui';
+import { Webtask } from './types';
+import { ShowErrorMessage, SilentExit, handleError } from './errors';
+import { isPhone, isEmail, processEmailOrPhone } from './util';
+import * as config from './config';
+import * as constants from './constants';
 
 
-let VERIFIER_TOKEN = 'eyJhbGciOiJIUzI1NiIsImtpZCI6IjIifQ.eyJqdGkiOiIyOTY5N2Y2MzM2ZTI0MWFjYTIxNjc1ZmE4ZWNmMjQ0MSIsImlhdCI6MTQzMzU0NzU2NCwiZHIiOjEsImNhIjpbXSwiZGQiOjAsInVybCI6Imh0dHBzOi8vY2RuLmF1dGgwLmNvbS93ZWJ0YXNrcy9zbXNfdmVyaWZpY2F0aW9uLmpzIiwidGVuIjoiYXV0aDAtd2VidGFzay1jbGkiLCJlY3R4IjoiK3BXR2MweFluUzV3V0laVlZOVjB5MmsyYitFY1MvbC9nTmwrc21ERkR6anFtdEp3RGl1a1JPMzcwVjZOUTJIZlc0am90YTQ0SXdDUE9iYUxneGhJc3pvWEVqdVAza1ZHWmUxZWF4T3BhdjFRelUzSTJRdlk2a1ZVVXM4YkhJMUtMcm52VjNEVjVRb1pJOEoxREErM2tuUDNXc3V4NnlydENPcXlrMUhpVGdFbS83Q1JSUFBmUzVuZTJEMTBKbnlaT2loMis1RTkzeVdidm5LM3F1aHF5VUl6QWlsQW1iSGNLRmpUMjB5OGF0MG03MXBzbm5teXN5K2I4MzJFN2F6aTBNbndTMUZ2UlRaWnNrUVdQdmlrWmpDRWE1bHhKUTBvanNHdklzMmVYRXhYNmxBUFBvTUVWd3k2T1pxYjA2Mzc2Njh4bHczQmRkUm9IUzF5UzZTVGNYcUY1YW42aDhkempxb29OWEF0aFFKeE5wQjN1c0VNcHdZOWxzSmxBNHpTLnhNaitWUGxkYUd5ZHhlcXRNYkJEK0E9PSJ9.cOcejs_Wj4XxpeR8WGxoSpQvec8NhfsScfirFPkATrg';
 let editorMap: any = {};
+let webtaskMap: any = {};
 
-class ShowErrorMessage extends Error {
-    showErrorMessage: boolean;
-
-    constructor(message: string) {
-        super(message);
-
-        this.showErrorMessage = true;
-    }
-}
-
-function handleError(err) {
-    if (err.showErrorMessage) {
-        vscode.window.showErrorMessage(err.message);
-    } else {
-        console.error(err);
-    }
-}
-
-function isPhone(value) {
-    return value && !!value.match(/^\+?[0-9]{1,15}$/);
-};
-
-function isEmail(value) {
-    return !!value.match(/[^@]+@[^@]+/i);
-}
-
-async function defaultProfileExists(): Promise<boolean> {
-    let vscodeWtConf = vscode.workspace.getConfiguration('webtask');
-    if (typeof vscodeWtConf.configPath === undefined) {
-        throw new ShowErrorMessage(`Could not read webtask.configPath configuration.`);
+function getActiveEditorToken(): string {
+    if (!vscode.window.activeTextEditor) {
+        throw new ShowErrorMessage('There is no active editor.');
     }
 
-    let configPath: string = vscodeWtConf.configPath.replace('$HOME', userHome);
-
-    return fs.existsSync(configPath);
-}
-
-async function tryGetDefaultProfile(): Promise<any> {
-    let vscodeWtConf = vscode.workspace.getConfiguration('webtask');
-    if (typeof vscodeWtConf.configPath === undefined) {
-        throw new ShowErrorMessage(`Could not read webtask.configPath configuration.`);
-    }
-
-    let configPath: string = vscodeWtConf.configPath.replace('$HOME', userHome);
-    let configContent: string;
-    let config;
-
-    if (!fs.existsSync(configPath)) {
-        return null;
-    }
-
-    try {
-        configContent = fs.readFileSync(configPath, 'utf8');
-    } catch (err) {
-        return null;
-    }
-
-    try {
-        config = JSON.parse(configContent);
-    } catch (err) {
-        return null;
-    }
-
-    if (typeof config.default === undefined) {
-        return null;
-    }
-
-    return config.default;
-}
-
-async function getDefaultProfile(): Promise<any> {
-    let vscodeWtConf = vscode.workspace.getConfiguration('webtask');
-    if (typeof vscodeWtConf.configPath === undefined) {
-        throw new ShowErrorMessage(`Could not read webtask.configPath configuration.`);
-    }
-
-    let configPath: string = vscodeWtConf.configPath.replace('$HOME', userHome);
-    let configContent: string;
-    let config;
-
-    if (!fs.existsSync(configPath)) {
-        throw new ShowErrorMessage(`Could not find file: ${configPath}. Use command [webtask init] to login.`);
-    }
-
-    try {
-        configContent = fs.readFileSync(configPath, 'utf8');
-    } catch (err) {
-        throw new ShowErrorMessage(`Could not read file: ${configPath}`);
-    }
-
-    try {
-        config = JSON.parse(configContent);
-    } catch (err) {
-        throw new ShowErrorMessage(`Could not parse JSON file: ${configPath}`);
-    }
-
-    if (typeof config.default === undefined) {
-        throw new ShowErrorMessage(`Could not find default profile. Use command [webtask init] to login.`);
-    }
-
-    return config.default;
-}
-
-async function writeDefaultProfile(profile: any): Promise<any> {
-    let vscodeWtConf = vscode.workspace.getConfiguration('webtask');
-    if (typeof vscodeWtConf.configPath === undefined) {
-        throw new ShowErrorMessage(`Could not read webtask.configPath configuration.`);
-    }
-
-    let configPath: string = vscodeWtConf.configPath.replace('$HOME', userHome);
-
-    try {
-        let profileStr = JSON.stringify(profile, null, 2);
-        fs.writeFileSync(configPath, profileStr, 'utf8');
-    } catch (err) {
-        throw new ShowErrorMessage(`Could not write file ${configPath}`);
-    }
-}
-
-async function getWebtasksList(profile, selectedToken?): Promise<any> {
-    let body;
-
-    try {
-        body = await rp({
-            method: 'get',
-            uri: `${profile.url}/api/webtask/${profile.container}`,
-            headers: {
-                'content-type': 'application/json',
-                'Authorization': `Bearer ${profile.token}`
-            },
-        });
-    } catch (err) {
-        throw new ShowErrorMessage(`Could not connect to webtask.io.`);
-    }
-
-    let webtasks = [];
-    try {
-        let result = JSON.parse(body);
-        let first = result.filter(wt => wt.token === selectedToken)[0];
-
-        if (first) {
-            webtasks.push(first);
+    for (let token in editorMap) {
+        if (editorMap[token] === vscode.window.activeTextEditor.document) {
+            return token;
         }
-
-        let rest = result.filter(wt => wt.token !== selectedToken);
-        for (let wt of rest) {
-            webtasks.push(wt);
-        }
-    } catch (err) {
-        throw new ShowErrorMessage(`Could not parse reponse from webtask.io.`);
     }
 
-    return webtasks;
+    throw new ShowErrorMessage('Could not find webtask associated with current editor.');
 }
 
-async function getWebtask(profile, token): Promise<any> {
-    let body;
-    let webtask;
-
-    let params = [
-        'token=' + token,
-        'decrypt=1',
-        'fetch_code=1',
-        'meta=1'
-    ].join('&');
-
-    try {
-        body = await rp({
-            method: 'get',
-            uri: `${profile.url}/api/tokens/inspect?${params}`,
-            headers: {
-                'content-type': 'application/json',
-                'Authorization': `Bearer ${profile.token}`
-            },
-        });
-    } catch (err) {
-        throw new ShowErrorMessage(`Could not connect to webtask.io.`);
-    }
-
-    try {
-        webtask = JSON.parse(body);
-    } catch (err) {
-        throw new ShowErrorMessage(`Could not parse reponse from webtask.io.`);
-    }
-
-    return webtask;
+function registerAsyncCommand(context: vscode.ExtensionContext, command: string, callback: (...args: any[]) => Promise<any>, thisArg?: any) {
+    context.subscriptions.push(vscode.commands.registerCommand(command, () => {
+        callback().catch(handleError);
+    }),
+    thisArg);
 }
 
 export function activate(context: vscode.ExtensionContext) {
 
-    context.subscriptions.push(vscode.commands.registerCommand('webtask.init', () => {
-        (async () => {
+    registerAsyncCommand(context, 'webtask.init', async () => {
+        let existingProfile = config.tryGetDefaultProfile();
 
-            let existingProfile = await tryGetDefaultProfile();
+        if (existingProfile) {
+            let override = await ui.askOverrideProfile();
 
-            if (existingProfile) {
-                let override = await vscode.window.showQuickPick(
-                    ['Yes', 'No'],
-                    { placeHolder: 'You already have a profile. Would you like to override it?' }
-                );
-
-                if (override !== 'Yes') {
-                    return;
-                }
-            }
-
-            let emailOrPhone = await vscode.window.showInputBox({
-                prompt: 'Please enter your e-mail or phone number, we will send you a verification code.',
-                placeHolder: 'Email or phone',
-                ignoreFocusOut: true
-            });
-
-            if (typeof emailOrPhone === undefined) {
+            if (!override) {
                 return;
             }
+        }
 
-            let type: string;
+        let emailOrPhone = await ui.askEmailOrPhone();
 
-            if (isPhone(emailOrPhone)) {
-                if (emailOrPhone.indexOf('+') !== 0) {
-                    emailOrPhone = '+1' + emailOrPhone; // default to US
-                }
+        let query = processEmailOrPhone(emailOrPhone);
 
-                type = 'phone';
-            } else if (isEmail(emailOrPhone)) {
-                type = 'email';
-            } else {
-                vscode.window.showErrorMessage('You must specify a valid e-mail address '
-                    + 'or a phone number. The phone number must start with + followed '
-                    + 'by country code, area code, and local number.');
+        await http.requestVerificationCode(query);
 
-                return;
-            }
+        query.verification_code = await ui.askForVerificationCode(emailOrPhone);
 
-            let query = {};
-            query[type] = emailOrPhone;
+        let webtask = await http.verifyCode(query);
 
-            await rp({
-                method: 'get',
-                uri: `https://webtask.it.auth0.com/api/run/auth0-webtask-cli`,
-                qs: query,
-                headers: {
-                    'content-type': 'application/json',
-                    'Authorization': `Bearer ${VERIFIER_TOKEN}`
-                }
-            });
+        let profile = {
+            url: webtask.url,
+            token: webtask.token,
+            container: webtask.tenant
+        };
 
-            let verificationCode = await vscode.window.showInputBox({
-                prompt: `Please enter the verification code we sent to ${emailOrPhone}`,
-                placeHolder: '',
-                ignoreFocusOut: true
-            });
+        config.writeDefaultProfile(profile);
 
-            if (typeof verificationCode === undefined) {
-                return;
-            }
+        vscode.window.setStatusBarMessage('Successfully logged in to webtask.io.', 5000);
+    });
 
-            let webtask;
+    registerAsyncCommand(context, 'webtask.open', async () => {
+        let profile = config.getDefaultProfile();
 
-            try {
-                let response = await rp({
-                    method: 'get',
-                    uri: `https://webtask.it.auth0.com/api/run/auth0-webtask-cli`,
-                    json: true,
-                    headers: {
-                        'content-type': 'application/json',
-                        'Authorization': `Bearer ${VERIFIER_TOKEN}`
-                    },
-                    qs: {
-                        email: emailOrPhone,
-                        verification_code: verificationCode
-                    }
-                });
+        let webtasks = await http.getWebtasksList(profile);
 
-               webtask = jwtDecode(response.id_token).webtask;
-            } catch (err) {
-                vscode.window.showErrorMessage('We were unable to verify your identity.');
-                return;
-            }
+        let selectedWebtask = await ui.askWebtaskList(webtasks);
 
-            let profile = {
-                default: {
-                    url: webtask.url,
-                    token: webtask.token,
-                    container: webtask.tenant
-                }
-            };
+        let webtask = await http.getWebtask(profile, selectedWebtask.token);
 
-            await writeDefaultProfile(profile);
+        let editor = await vscode.workspace.openTextDocument(vscode.Uri.parse(`untitled:${selectedWebtask.name}.js`));
 
-            await vscode.window.showInformationMessage('Successfully logged in to webtask.io.');
+        await vscode.window.showTextDocument(editor, vscode.ViewColumn.One, true);
 
-        })().catch(handleError);
-    }));
+        await vscode.window.activeTextEditor.edit(editBuilder => {
+            editBuilder.insert(new vscode.Position(0, 0), webtask.code);
+        });
 
-    context.subscriptions.push(vscode.commands.registerCommand('webtask.open', () => {
-        (async () => {
+        editorMap[selectedWebtask.token] = editor;
+        webtaskMap[selectedWebtask.token] = webtask;
+    });
 
-            let profile;
-            let webtasks;
+    registerAsyncCommand(context, 'webtask.create', async () => {
+        let profile = config.getDefaultProfile();
 
-            await vscode.window.withProgress({ location: vscode.ProgressLocation.Window }, async progress => {
-                progress.report({ message: 'Fetching webtasks' });
+        let webtaskName = await ui.askNewWebtaskName();
 
-                profile = await getDefaultProfile();
-                webtasks = await getWebtasksList(profile);
-            });
+        let webtask = await http.createNewWebtask(profile, webtaskName, constants.NEW_WEBTASK_CODE);
 
-            for (let wt of webtasks) {
-                wt.label = wt.name;
-            }
+        let editor = await vscode.workspace.openTextDocument(vscode.Uri.parse(`untitled:${webtaskName}.js`));
 
-            let selectedItem: any = await vscode.window.showQuickPick(webtasks);
-            if (selectedItem === undefined) return;
+        await vscode.window.showTextDocument(editor, vscode.ViewColumn.One, true);
 
-            await vscode.window.withProgress({ location: vscode.ProgressLocation.Window }, async progress => {
-                let webtask;
+        await vscode.window.activeTextEditor.edit(editBuilder => {
+            editBuilder.insert(new vscode.Position(0, 0), constants.NEW_WEBTASK_CODE);
+        });
 
-                progress.report({ message: 'Opening webtask' });
+        editorMap[webtask.token] = editor;
+        webtaskMap[webtask.token] = webtask;
 
-                webtask = await getWebtask(profile, selectedItem.token);
+        vscode.window.setStatusBarMessage(`Webtask ${webtaskName} successfully created`, 5000);
+    });
 
-                let editor = await vscode.workspace.openTextDocument({
-                    language: 'javascript',
-                    content: webtask.code
-                });
+    registerAsyncCommand(context, 'webtask.update', async () => {
+        let firstToken = getActiveEditorToken();
 
-                vscode.window.showTextDocument(editor, vscode.ViewColumn.One, true);
+        let profile = config.getDefaultProfile();
 
-                editorMap[selectedItem.token] = editor;
-            });
+        let webtasks = await http.getWebtasksList(profile, firstToken);
 
-        })().catch(handleError);
-    }));
+        let selectedWebtask = await ui.askWebtaskList(webtasks);
 
-    context.subscriptions.push(vscode.commands.registerCommand('webtask.update', () => {
-        (async () => {
+        let code = vscode.window.activeTextEditor.document.getText();
+        await http.updateWebtask(profile, selectedWebtask.container, selectedWebtask.name, code);
 
-            let profile;
-            let webtasks;
+        editorMap[selectedWebtask.name] = selectedWebtask;
+        webtaskMap[selectedWebtask.name] = selectedWebtask;
 
-            await vscode.window.withProgress({ location: vscode.ProgressLocation.Window }, async progress => {
-                progress.report({ message: 'Fetching webtasks' });
+        vscode.window.setStatusBarMessage(`Webtask ${selectedWebtask.name} successfully updated`, 5000);
+    });
 
-                let firstToken = null;
-                for (let token in editorMap) {
-                    if (vscode.window.activeTextEditor &&
-                        vscode.window.activeTextEditor.document &&
-                        editorMap[token] === vscode.window.activeTextEditor.document
-                    ) {
-                        firstToken = token;
-                    }
-                }
+    registerAsyncCommand(context, 'webtask.run', async () => {
+        let token = getActiveEditorToken();
 
-                profile = await getDefaultProfile();
-                webtasks = await getWebtasksList(profile, firstToken);
-
-                for (let wt of webtasks) {
-                    wt.label = wt.name;
-                }
-            });
-
-            let selectedItem: any = await vscode.window.showQuickPick(webtasks);
-            if (selectedItem === undefined) return;
-
-            await vscode.window.withProgress({ location: vscode.ProgressLocation.Window }, async progress => {
-                progress.report({ message: 'Saving webtask' });
-
-                let body = await rp({
-                    method: 'put',
-                            uri: `${profile.url}/api/webtask/${selectedItem.container}/${selectedItem.name}`,
-                    headers: {
-                        'content-type': 'application/json',
-                        'Authorization': `Bearer ${profile.token}`
-                    },
-                    body: JSON.stringify({
-                        code: vscode.window.activeTextEditor.document.getText()
-                    })
-                });
-
-            });
-
-        })().catch(handleError);
-    }));
+        if (process.platform === 'darwin') {
+            macOpen(webtaskMap[token].webtask_url);
+        } else {
+            open(webtaskMap[token].webtask_url);
+        }
+    });
 }
 
 export function deactivate() {
