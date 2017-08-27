@@ -1,3 +1,4 @@
+'use strict';
 
 export const NEW_WEBTASK_CODE =
 `module.exports = function(cb) {
