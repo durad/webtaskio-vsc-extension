@@ -2,9 +2,8 @@
 
 import * as vscode from 'vscode';
 
-
 export class ShowErrorMessage extends Error {
-    showErrorMessage: boolean;
+    private showErrorMessage: boolean;
 
     constructor(message: string) {
         super(message);

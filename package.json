@@ -57,7 +57,8 @@
     "vscode:prepublish": "tsc -p ./",
     "compile": "tsc -watch -p ./",
     "postinstall": "node ./node_modules/vscode/bin/install",
-    "test": "node ./node_modules/vscode/bin/test"
+    "test": "node ./node_modules/vscode/bin/test",
+    "tslint": "tslint -c tslint.json src/**/*.ts"
   },
   "devDependencies": {
     "typescript": "^2.0.3",

@@ -1,20 +1,19 @@
 'use strict';
 
-import * as vscode from 'vscode';
-import { Uri, commands } from 'vscode';
+import * as macOpen from 'mac-open';
+import * as open from 'open';
 import * as rp from 'request-promise';
 import * as userHome from 'user-home';
-import * as open from 'open';
-import * as macOpen from 'mac-open';
+import * as vscode from 'vscode';
+import { commands, Uri } from 'vscode';
 
-import * as http from './http';
-import * as ui from './ui';
-import { Webtask } from './types';
-import { ShowErrorMessage, SilentExit, handleError } from './errors';
-import { isPhone, isEmail, processEmailOrPhone } from './util';
 import * as config from './config';
 import * as constants from './constants';
-
+import { handleError, ShowErrorMessage, SilentExit } from './errors';
+import * as http from './http';
+import { IWebtask } from './types';
+import * as ui from './ui';
+import { isEmail, isPhone, processEmailOrPhone } from './util';
 
 let editorMap: any = {};
 let webtaskMap: any = {};
@@ -33,7 +32,11 @@ function getActiveEditorToken(): string {
     throw new ShowErrorMessage('Could not find webtask associated with current editor.');
 }
 
-function registerAsyncCommand(context: vscode.ExtensionContext, command: string, callback: (...args: any[]) => Promise<any>, thisArg?: any) {
+function registerAsyncCommand(
+    context: vscode.ExtensionContext,
+    command: string, callback: (...args: any[]) => Promise<any>,
+    thisArg?: any
+) {
     context.subscriptions.push(vscode.commands.registerCommand(command, () => {
         callback().catch(handleError);
     }),
@@ -64,9 +67,9 @@ export function activate(context: vscode.ExtensionContext) {
         let webtask = await http.verifyCode(query);
 
         let profile = {
-            url: webtask.url,
+            container: webtask.tenant,
             token: webtask.token,
-            container: webtask.tenant
+            url: webtask.url
         };
 
         config.writeDefaultProfile(profile);

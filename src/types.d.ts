@@ -1,7 +1,7 @@
 
-export interface Webtask {
-    name: string,
-    token: string,
-    url: string,
-    tenant: string
+export interface IWebtask {
+    name: string;
+    token: string;
+    url: string;
+    tenant: string;
 }

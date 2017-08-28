@@ -1,16 +1,15 @@
 'use strict';
 
-import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as userHome from 'user-home';
+import * as vscode from 'vscode';
 
-import { Webtask } from './types';
 import { ShowErrorMessage, SilentExit } from './errors';
-
+import { IWebtask } from './types';
 
 export function defaultProfileExists(): boolean {
     let vscodeWtConf = vscode.workspace.getConfiguration('webtask');
-    if (typeof vscodeWtConf.configPath === undefined) {
+    if (!vscodeWtConf.configPath) {
         throw new ShowErrorMessage(`Could not read webtask.configPath configuration.`);
     }
 
@@ -21,7 +20,7 @@ export function defaultProfileExists(): boolean {
 
 export function tryGetDefaultProfile(): any {
     let vscodeWtConf = vscode.workspace.getConfiguration('webtask');
-    if (typeof vscodeWtConf.configPath === undefined) {
+    if (!vscodeWtConf.configPath) {
         throw new ShowErrorMessage(`Could not read webtask.configPath configuration.`);
     }
 
@@ -45,7 +44,7 @@ export function tryGetDefaultProfile(): any {
         return null;
     }
 
-    if (typeof config.default === undefined) {
+    if (!typeof config.default) {
         return null;
     }
 
@@ -54,7 +53,7 @@ export function tryGetDefaultProfile(): any {
 
 export function getDefaultProfile(): any {
     let vscodeWtConf = vscode.workspace.getConfiguration('webtask');
-    if (typeof vscodeWtConf.configPath === undefined) {
+    if (!vscodeWtConf.configPath) {
         throw new ShowErrorMessage(`Could not read webtask.configPath configuration.`);
     }
 
@@ -78,7 +77,7 @@ export function getDefaultProfile(): any {
         throw new ShowErrorMessage(`Could not parse JSON file: ${configPath}`);
     }
 
-    if (typeof config.default === undefined) {
+    if (!config.default) {
         throw new ShowErrorMessage(`Could not find default profile. Use command [webtask init] to login.`);
     }
 
@@ -87,7 +86,7 @@ export function getDefaultProfile(): any {
 
 export function writeDefaultProfile(profile: any): any {
     let vscodeWtConf = vscode.workspace.getConfiguration('webtask');
-    if (typeof vscodeWtConf.configPath === undefined) {
+    if (!vscodeWtConf.configPath) {
         throw new ShowErrorMessage(`Could not read webtask.configPath configuration.`);
     }
 

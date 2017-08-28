@@ -2,9 +2,8 @@
 
 import * as vscode from 'vscode';
 
-import { Webtask } from './types';
 import { ShowErrorMessage, SilentExit } from './errors';
-
+import { IWebtask } from './types';
 
 export async function askOverrideProfile(): Promise<boolean> {
     let response = await vscode.window.showQuickPick(
@@ -12,7 +11,7 @@ export async function askOverrideProfile(): Promise<boolean> {
         { placeHolder: 'You already have a profile. Would you like to override it?' }
     );
 
-    if (typeof response === undefined) {
+    if (!response) {
         throw new SilentExit();
     }
 
@@ -21,11 +20,11 @@ export async function askOverrideProfile(): Promise<boolean> {
 
 export async function askEmailOrPhone(): Promise<string> {
     let response = await vscode.window.showInputBox({
-        prompt: 'Please enter your e-mail or phone number, we will send you a verification code.',
-        placeHolder: 'Email or phone'
+        placeHolder: 'Email or phone',
+        prompt: 'Please enter your e-mail or phone number, we will send you a verification code.'
     });
 
-    if (typeof response === undefined) {
+    if (!response) {
         throw new SilentExit();
     }
 
@@ -34,12 +33,12 @@ export async function askEmailOrPhone(): Promise<string> {
 
 export async function askForVerificationCode(emailOrPhone): Promise<string> {
     let verificationCode = await vscode.window.showInputBox({
-        prompt: `Please enter the verification code we sent to ${emailOrPhone}`,
+        ignoreFocusOut: true,
         placeHolder: '',
-        ignoreFocusOut: true
+        prompt: `Please enter the verification code we sent to ${emailOrPhone}`
     });
 
-    if (typeof verificationCode === undefined) {
+    if (!verificationCode) {
         throw new SilentExit();
     }
 
@@ -65,10 +64,9 @@ export async function askNewWebtaskName(): Promise<string> {
         prompt: 'Enter the name of the new webtask'
     });
 
-    if (typeof webtaskName === undefined) {
+    if (!webtaskName) {
         throw new SilentExit();
     }
 
     return webtaskName;
 }
-

@@ -4,10 +4,9 @@ import * as vscode from 'vscode';
 
 import { ShowErrorMessage } from './errors';
 
-
 export function isPhone(value) {
     return value && !!value.match(/^\+?[0-9]{1,15}$/);
-};
+}
 
 export function isEmail(value) {
     return !!value.match(/[^@]+@[^@]+/i);
