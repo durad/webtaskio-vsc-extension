@@ -2,18 +2,18 @@
   "name": "webtaskio-vsc-extension",
   "displayName": "Webtask.io connect",
   "description": "Connect to webtask.io from VSCode",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "publisher": "dusan",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/durad/webtaskio-vsc-extension.git"
+  },
   "engines": {
     "vscode": "^1.15.0"
   },
   "categories": [
     "Other"
   ],
-  "repository": {
-		"type": "git",
-		"url": "https://github.com/durad/webtaskio-vsc-extension"
-	},
   "activationEvents": [
     "onCommand:webtask.init",
     "onCommand:webtask.open",
