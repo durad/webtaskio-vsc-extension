@@ -7,7 +7,7 @@ import * as rp from 'request-promise';
 
 import * as constants from './constants';
 import { ShowErrorMessage, SilentExit } from './errors';
-import { IWebtask } from './types';
+import { IVerifyCodeResult, IWebtask, IWebtaskDetails } from './types';
 
 export async function getWebtasksList(profile, selectedToken?): Promise<IWebtask[]> {
     try {
@@ -38,7 +38,7 @@ export async function getWebtasksList(profile, selectedToken?): Promise<IWebtask
     }
 }
 
-export async function getWebtask(profile, token): Promise<any> {
+export async function getWebtask(profile, token): Promise<IWebtaskDetails> {
     try {
         let webtask = await rp({
             method: 'get',
@@ -77,7 +77,7 @@ export async function requestVerificationCode(query): Promise<void> {
     }
 }
 
-export async function verifyCode(query): Promise<IWebtask> {
+export async function verifyCode(query): Promise<IVerifyCodeResult> {
     try {
         let response = await rp({
             method: 'get',
@@ -115,7 +115,7 @@ export async function createNewWebtask(profile, webtaskName, code): Promise<IWeb
     }
 }
 
-export async function updateWebtask(profile, webtaskContainer, webtaskName, code) {
+export async function updateWebtask(profile, webtaskContainer, webtaskName, code): Promise<void> {
     try {
         let response = await rp({
             method: 'put',

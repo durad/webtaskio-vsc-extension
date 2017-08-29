@@ -45,12 +45,12 @@ export async function askForVerificationCode(emailOrPhone): Promise<string> {
     return verificationCode;
 }
 
-export async function askWebtaskList(webtasks): Promise<any> {
+export async function askWebtaskList(webtasks: IWebtask[]): Promise<IWebtask> {
     for (let wt of webtasks) {
-        wt.label = wt.name;
+        (wt as any).label = wt.name;
     }
 
-    let selectedItem = await vscode.window.showQuickPick(webtasks);
+    let selectedItem = await vscode.window.showQuickPick<any>(webtasks);
 
     if (selectedItem === undefined) {
         throw new SilentExit();

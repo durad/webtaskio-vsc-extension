@@ -15,18 +15,24 @@ import { IWebtask } from './types';
 import * as ui from './ui';
 import { isEmail, isPhone, processEmailOrPhone } from './util';
 
-let editorMap: any = {};
-let webtaskMap: any = {};
+let documentMap: Map<vscode.TextDocument, IWebtask> = new Map<vscode.TextDocument, IWebtask>();
 
-function getActiveEditorToken(): string {
+function tryGetActiveWebtask(): IWebtask {
+    if (!vscode.window.activeTextEditor) {
+        return null;
+    }
+
+    return documentMap.get(vscode.window.activeTextEditor.document) || null;
+}
+
+function getActiveWebtask(): IWebtask {
     if (!vscode.window.activeTextEditor) {
         throw new ShowErrorMessage('There is no active editor.');
     }
 
-    for (let token in editorMap) {
-        if (editorMap[token] === vscode.window.activeTextEditor.document) {
-            return token;
-        }
+    let webtask = documentMap.get(vscode.window.activeTextEditor.document);
+    if (webtask) {
+        return webtask;
     }
 
     throw new ShowErrorMessage('Could not find webtask associated with current editor.');
@@ -86,16 +92,23 @@ export function activate(context: vscode.ExtensionContext) {
 
         let webtask = await http.getWebtask(profile, selectedWebtask.token);
 
-        let editor = await vscode.workspace.openTextDocument(vscode.Uri.parse(`untitled:${selectedWebtask.name}.js`));
+        let document = vscode.workspace.textDocuments
+            .filter(d => documentMap.get(d) && documentMap.get(d).token === selectedWebtask.token)[0];
 
-        await vscode.window.showTextDocument(editor, vscode.ViewColumn.One, true);
+        if (!document) {
+            document = await vscode.workspace.openTextDocument(vscode.Uri.parse(`untitled:${selectedWebtask.name}.js`));
+        }
+
+        await vscode.window.showTextDocument(document, vscode.ViewColumn.One, true);
 
         await vscode.window.activeTextEditor.edit(editBuilder => {
-            editBuilder.insert(new vscode.Position(0, 0), webtask.code);
+            let lastLine = document.lineCount - 1;
+            let lastChar = document.lineAt(lastLine).text.length;
+
+            editBuilder.replace(new vscode.Range(0, 0, lastLine, lastChar), webtask.code);
         });
 
-        editorMap[selectedWebtask.token] = editor;
-        webtaskMap[selectedWebtask.token] = webtask;
+        documentMap.set(document, selectedWebtask);
     });
 
     registerAsyncCommand(context, 'webtask.create', async () => {
@@ -105,45 +118,43 @@ export function activate(context: vscode.ExtensionContext) {
 
         let webtask = await http.createNewWebtask(profile, webtaskName, constants.NEW_WEBTASK_CODE);
 
-        let editor = await vscode.workspace.openTextDocument(vscode.Uri.parse(`untitled:${webtaskName}.js`));
+        let document = await vscode.workspace.openTextDocument(vscode.Uri.parse(`untitled:${webtaskName}.js`));
 
-        await vscode.window.showTextDocument(editor, vscode.ViewColumn.One, true);
+        await vscode.window.showTextDocument(document, vscode.ViewColumn.One, true);
 
         await vscode.window.activeTextEditor.edit(editBuilder => {
             editBuilder.insert(new vscode.Position(0, 0), constants.NEW_WEBTASK_CODE);
         });
 
-        editorMap[webtask.token] = editor;
-        webtaskMap[webtask.token] = webtask;
+        documentMap.set(document, webtask);
 
         vscode.window.setStatusBarMessage(`Webtask ${webtaskName} successfully created`, 5000);
     });
 
     registerAsyncCommand(context, 'webtask.update', async () => {
-        let firstToken = getActiveEditorToken();
+        let activeWebtask = getActiveWebtask();
 
         let profile = config.getDefaultProfile();
 
-        let webtasks = await http.getWebtasksList(profile, firstToken);
+        let webtasks = await http.getWebtasksList(profile, activeWebtask ? activeWebtask.token : null);
 
         let selectedWebtask = await ui.askWebtaskList(webtasks);
 
         let code = vscode.window.activeTextEditor.document.getText();
         await http.updateWebtask(profile, selectedWebtask.container, selectedWebtask.name, code);
 
-        editorMap[selectedWebtask.name] = selectedWebtask;
-        webtaskMap[selectedWebtask.name] = selectedWebtask;
+        documentMap.set(vscode.window.activeTextEditor.document, selectedWebtask);
 
         vscode.window.setStatusBarMessage(`Webtask ${selectedWebtask.name} successfully updated`, 5000);
     });
 
     registerAsyncCommand(context, 'webtask.run', async () => {
-        let token = getActiveEditorToken();
+        let webtask = getActiveWebtask();
 
         if (process.platform === 'darwin') {
-            macOpen(webtaskMap[token].webtask_url);
+            macOpen(webtask.webtask_url);
         } else {
-            open(webtaskMap[token].webtask_url);
+            open(webtask.webtask_url);
         }
     });
 }
