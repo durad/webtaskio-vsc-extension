@@ -1,65 +1,39 @@
-# webtaskio-vsc-extension README
+# Webtask.io Connect
 
-This is the README for your extension "webtaskio-vsc-extension". After writing up a brief description, we recommend including the following sections.
+Integrates functionality of [ebtask.io](https://webtask.io) into VS Code. Fastest way to run your node.js code.
+
+![Create and Update](images/create-and-update.gif)
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Allows quick prototyping of node.js webtasks. Fastest way to test your node.js code on the web.
 
-For example if there is an image subfolder under your extension project workspace:
+## Commands
 
-\!\[feature X\]\(images/feature-x.png\)
+* Init - Initializes Webtask environment. The user will be asked for credentials and default profile will be created.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+* Open - Opens a webtask from the server in a new text editor.
 
-## Requirements
+* Create - Creates a default Hello World webtask on the server.
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+* Update - Updates a code of a selected webtask on the server.
+
+* Run - Opens up a url associated with the currently edited webtask in the browser.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
 This extension contributes the following settings:
 
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
+* `webtask.configPath`: path to the .webtask file. Defaults to $HOME/.webtask
 
 ### 1.0.0
 
-Initial release of ...
+Initial release of the extension.
 
-### 1.0.1
+### Source
 
-Fixed issue #.
+[GitHub](https://github.com/durad/webtaskio-vsc-extension)
 
-### 1.1.0
+### License
 
-Added features X, Y, and Z.
-
------------------------------------------------------------------------------------------------------------
-
-## Working with Markdown
-
-**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on OSX or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+CMD+V` on OSX or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (OSX) to see a list of Markdown snippets
-
-### For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+[MIT](LICENSE)
