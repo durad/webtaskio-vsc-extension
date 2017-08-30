@@ -1,8 +1,8 @@
 {
   "name": "webtaskio-vsc-extension",
-  "displayName": "Webtask.io connect",
+  "displayName": "Webtask.io Connect",
   "description": "Connect to webtask.io from VSCode",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "publisher": "dusan",
   "repository": {
     "type": "git",
