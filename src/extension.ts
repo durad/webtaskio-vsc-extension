@@ -15,8 +15,14 @@ import { IWebtask } from './types';
 import * as ui from './ui';
 import { isEmail, isPhone, processEmailOrPhone } from './util';
 
+/**
+ * keeps a link between opened documents and webtasks.
+ */
 let documentMap: Map<vscode.TextDocument, IWebtask> = new Map<vscode.TextDocument, IWebtask>();
 
+/**
+ * Gets the webtask associated with the active TextEditor if any.
+ */
 function tryGetActiveWebtask(): IWebtask {
     if (!vscode.window.activeTextEditor) {
         return null;
@@ -25,6 +31,9 @@ function tryGetActiveWebtask(): IWebtask {
     return documentMap.get(vscode.window.activeTextEditor.document) || null;
 }
 
+/**
+ * Gets the webtask associated with the active TextEditor if there is any or thorws ShowErrorMessage otherwise.
+ */
 function getActiveWebtask(): IWebtask {
     if (!vscode.window.activeTextEditor) {
         throw new ShowErrorMessage('There is no active editor.');
@@ -38,6 +47,13 @@ function getActiveWebtask(): IWebtask {
     throw new ShowErrorMessage('Could not find webtask associated with current editor.');
 }
 
+/**
+ * Function takes async function, wraps it in Promise, calls register command and subscribes it to extension context.
+ * @param context An extension context passed to activate function.
+ * @param command A unique identifier for the command.
+ * @param callback A command handler function.
+ * @param thisArg The `this` context used when invoking the handler function.
+ */
 function registerAsyncCommand(
     context: vscode.ExtensionContext,
     command: string, callback: (...args: any[]) => Promise<any>,
@@ -49,8 +65,12 @@ function registerAsyncCommand(
     thisArg);
 }
 
+/**
+ * An entry point of an extesion. Called by VSCode extension host.
+ */
 export function activate(context: vscode.ExtensionContext) {
 
+    // Initializes Webtask environment.
     registerAsyncCommand(context, 'webtask.init', async () => {
         let existingProfile = config.tryGetDefaultProfile();
 
@@ -83,6 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.setStatusBarMessage('Successfully logged in to webtask.io.', 5000);
     });
 
+    // Opens a webtask from the server in a new text editor.
     registerAsyncCommand(context, 'webtask.open', async () => {
         let profile = config.getDefaultProfile();
 
@@ -92,9 +113,11 @@ export function activate(context: vscode.ExtensionContext) {
 
         let webtask = await http.getWebtask(profile, selectedWebtask.token);
 
+        // if selected webtask is already opened, we'll just update editor's content
         let document = vscode.workspace.textDocuments
             .filter(d => documentMap.get(d) && documentMap.get(d).token === selectedWebtask.token)[0];
 
+        // if it doesn't exist create a new one
         if (!document) {
             document = await vscode.workspace.openTextDocument(vscode.Uri.parse(`untitled:${selectedWebtask.name}.js`));
         }
@@ -111,6 +134,7 @@ export function activate(context: vscode.ExtensionContext) {
         documentMap.set(document, selectedWebtask);
     });
 
+    // Creates a default Hello World webtask on the server.
     registerAsyncCommand(context, 'webtask.create', async () => {
         let profile = config.getDefaultProfile();
 
@@ -131,6 +155,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.setStatusBarMessage(`Webtask ${webtaskName} successfully created`, 5000);
     });
 
+    // Updates a code of a selected webtask on the server.
     registerAsyncCommand(context, 'webtask.update', async () => {
         let activeWebtask = getActiveWebtask();
 
@@ -148,13 +173,14 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.setStatusBarMessage(`Webtask ${selectedWebtask.name} successfully updated`, 5000);
     });
 
+    // Opens up a webtask's URL in the browser.
     registerAsyncCommand(context, 'webtask.run', async () => {
         let webtask = getActiveWebtask();
 
         if (process.platform === 'darwin') {
-            macOpen(webtask.webtask_url);
+            macOpen(webtask.webtask_url); // use macOpen for Macs
         } else {
-            open(webtask.webtask_url);
+            open(webtask.webtask_url); // Windows and Linuxes
         }
     });
 }
