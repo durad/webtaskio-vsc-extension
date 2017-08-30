@@ -26,7 +26,7 @@ This extension contributes the following settings:
 
 * `webtask.configPath`: path to the .webtask file. Defaults to $HOME/.webtask
 
-### 1.0.7
+### 1.0.8
 
 Fixed minor issues.
 
