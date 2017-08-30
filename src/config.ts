@@ -7,6 +7,9 @@ import * as vscode from 'vscode';
 import { ShowErrorMessage, SilentExit } from './errors';
 import { IWebtask } from './types';
 
+/**
+ * Returns true if a webtask config file exists.
+ */
 export function defaultProfileExists(): boolean {
     let vscodeWtConf = vscode.workspace.getConfiguration('webtask');
     if (!vscodeWtConf.configPath) {
@@ -18,6 +21,9 @@ export function defaultProfileExists(): boolean {
     return fs.existsSync(configPath);
 }
 
+/**
+ * Returns default profile if exists or null if it doesn't.
+ */
 export function tryGetDefaultProfile(): any {
     let vscodeWtConf = vscode.workspace.getConfiguration('webtask');
     if (!vscodeWtConf.configPath) {
@@ -51,6 +57,9 @@ export function tryGetDefaultProfile(): any {
     return config.default;
 }
 
+/**
+ * Returns default profile if exists or displays an error message if it doesn't.
+ */
 export function getDefaultProfile(): any {
     let vscodeWtConf = vscode.workspace.getConfiguration('webtask');
     if (!vscodeWtConf.configPath) {
@@ -84,6 +93,10 @@ export function getDefaultProfile(): any {
     return config.default;
 }
 
+/**
+ * Overwrites config file with a new default profile.
+ * @param profile Default profile to be written.
+ */
 export function writeDefaultProfile(profile: any): any {
     let vscodeWtConf = vscode.workspace.getConfiguration('webtask');
     if (!vscodeWtConf.configPath) {
