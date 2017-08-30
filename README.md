@@ -1,12 +1,12 @@
 # Webtask.io Connect
 
-Integrates functionality of [webtask.io](https://webtask.io) into VS Code. Fastest way to run your node.js code.
+Integrates functionality of [webtask.io](https://webtask.io) into VS Code.
 
 ![Create and Update](images/create-and-update.gif)
 
 ## Features
 
-Allows quick prototyping of node.js webtasks. Fastest way to test your node.js code on the web.
+Allows opening, creating and updating webtasks code directly from the VS Code environment. Option Run will open webtask's URL in the browser.
 
 ## Commands
 
@@ -26,7 +26,7 @@ This extension contributes the following settings:
 
 * `webtask.configPath`: path to the .webtask file. Defaults to $HOME/.webtask
 
-### 1.0.5
+### 1.0.7
 
 Fixed minor issues.
 
